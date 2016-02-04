@@ -5,7 +5,7 @@ from cpython cimport array
 import array
 import random 
 import math
-from numpy import linalg as LA
+#from numpy import linalg as LA
 
 
 DTYPE = np.float32
@@ -36,7 +36,7 @@ def randomVectorGenerator(elementos):
         vector.append((random.random() - 0.5) * 0.2)
 
     vector = np.array(vector, dtype=DTYPE)
-    return vector / LA.norm(vector)
+    return vector / np.linalg.norm(vector)
 
 def softMaxPartial(np.ndarray h,np.ndarray w_jPrima,int dimensiones):
     return math.exp(np.dot(h, np.array(w_jPrima).T))
@@ -78,21 +78,26 @@ def doc2vec(frases,int npalabras,int tagsCount,int ventana,double alpha,double a
     cdef DTYPE_t E = 0.0
     cdef DTYPE_t alpha_aux = alpha
     cdef DTYPE_t sumWeights = 0.0
+    cdef np.ndarray EH_medium
+    cdef np.ndarray EH
 
     for _ in xrange(epocas):
         print _
 
         for indexFrase, tuplas in enumerate(tuplasTodas):
-            if indexFrase % 5000 == 0: print indexFrase
+            if indexFrase % 500 == 0: print indexFrase
             #generacion de las tuplas de entrenamiento
             #[(palabra a predecir, array de palabras)]
             #tuplas = tuplasEntrenamiento(frase, ventana)
             if tuplas == []:
                 continue
 
+            #print tuplas
             for palabraIndexTrain, tupla, tags in tuplas:
                 h = np.zeros(dimensiones, dtype=DTYPE)
                 
+                palabraIndexTrain, peso = palabraIndexTrain
+
                 sumWeights = 0.0
                 for palabra, weight in tupla:
                     sumWeights += weight
@@ -119,23 +124,21 @@ def doc2vec(frases,int npalabras,int tagsCount,int ventana,double alpha,double a
                         sumsePowu_j += softMaxPartial_line(h, palabrasW[index])
 
                 y_j = ePowu_j/sumsePowu_j
-                E = 0.0 - ePowu_j - math.log(sumsePowu_j)
                 
-        
-                palabrasW[palabraIndexTrain] = palabrasW[palabraIndexTrain] - ((alpha_aux * double_max(0.001, (y_j - 1.0))) * h)
-                palabrasW[palabraIndexTrain] = palabrasW[palabraIndexTrain] / LA.norm(palabrasW[palabraIndexTrain])
-            
-                aux = ((alpha_aux * E) / sumWeights)
-                EH_medium = h * aux #ventana -1 + 1 del vector de la frase + 1 del contexto
+                palabrasW[palabraIndexTrain] = palabrasW[palabraIndexTrain] - ((alpha_aux * double_max(0.001, (y_j - peso))) * h)
+                palabrasW[palabraIndexTrain] = palabrasW[palabraIndexTrain] / np.linalg.norm(palabrasW[palabraIndexTrain])
+                
+                EH = double_max(0.001, (y_j - peso)) * palabrasW[palabraIndexTrain]
+                EH_medium = (alpha_aux/sumWeights) * EH
                 #print EH_medium
                 
                 for palabra, weight in tupla:
                     palabrasW[palabra] = palabrasW[palabra] - (EH_medium * weight)
-                    palabrasW[palabra] = palabrasW[palabra] / LA.norm(palabrasW[palabra])
+                    palabrasW[palabra] = palabrasW[palabra] / np.linalg.norm(palabrasW[palabra])
 
                 for tag in tags:
                     paragraphsW[tag] = paragraphsW[tag] - EH_medium
-                    paragraphsW[tag] = paragraphsW[tag] / LA.norm(paragraphsW[tag])
+                    paragraphsW[tag] = paragraphsW[tag] / np.linalg.norm(paragraphsW[tag])
                 
             #actualizacion del alpha
             alpha_aux -= alpha_change

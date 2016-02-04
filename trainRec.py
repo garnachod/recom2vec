@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
-from weigtedDoc2Vec import *
+import codecs
+from weightedDoc2Vec import *
 
 def readFileAnGenerateTrain(filename):
 	dicc = {}
@@ -8,8 +9,8 @@ def readFileAnGenerateTrain(filename):
 	diccCount = 0
 	frases = []
 	dicTags = {}
-    dicTagsInverse = {}
-    tagsCount = 0
+	dicTagsInverse = {}
+	tagsCount = 0
 
 	with open(filename, "r") as fin:
 		users = json.loads(fin.read())
@@ -35,9 +36,9 @@ def readFileAnGenerateTrain(filename):
 		#generacion de los diccionarios y demas
 		for user in users:
 			dicTags[user] = tagsCount
-            dicTagsInverse[str(tagsCount)] = user
-            tagsCount += 1
-			frase = ([],(dicTags[user]))
+			dicTagsInverse[str(tagsCount)] = user
+			tagsCount += 1
+			frase = ([],[dicTags[user]])
 
 			for pelicula, peso, tiempo in users[user]["ratings"]:
 				if pelicula not in dicc:
@@ -50,12 +51,28 @@ def readFileAnGenerateTrain(filename):
 
 	return dicc, diccCount, frases, diccInverse, dicTags, dicTagsInverse, tagsCount
 
+
+def saveDictionaryAndVectors(dic, vectors, namefile):
+	with codecs.open(namefile, "w", "utf-8") as fout:
+		for key in dic:
+			fout.write(key)
+			for elem in vectors[dic[key]]:
+				fout.write(","+str(elem))
+			fout.write("\n")
+
+	
 if __name__ == '__main__':
 	ventana = 15
-    alpha = 0.05
-    alpha_min = 0.0001
-    epocas = 20
-    dimensiones = 100
+	alpha = 0.05
+	alpha_min = 0.0001
+	epocas = 10
+	dimensiones = 100
 
-    diccionario, npalabras, frases, diccInverse, dicTags, dicTagsInverse, tagsCount = readFileAnGenerateTrain("exampleUsers")
-    palabrasW , paragraphsW = doc2vec(frases, npalabras, tagsCount, ventana, alpha, alpha_min, dimensiones, epocas)
+	diccionario, npalabras, frases, diccInverse, dicTags, dicTagsInverse, tagsCount = readFileAnGenerateTrain("train/ratings_parsed.txt")
+	palabrasW, paragraphsW = doc2vec(frases, npalabras, tagsCount, ventana, alpha, alpha_min, dimensiones, epocas)
+
+	saveDictionaryAndVectors(diccionario, palabrasW, "palabras.vecs")
+	saveDictionaryAndVectors(dicTags, paragraphsW, "tags.vecs")
+
+
+
