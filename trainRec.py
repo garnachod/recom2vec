@@ -62,11 +62,11 @@ def saveDictionaryAndVectors(dic, vectors, namefile):
 
 	
 if __name__ == '__main__':
-	ventana = 15
-	alpha = 0.05
+	ventana = 21
+	alpha = 0.01
 	alpha_min = 0.0001
-	epocas = 10
-	dimensiones = 100
+	epocas = 20
+	dimensiones = 250
 
 	diccionario, npalabras, frases, diccInverse, dicTags, dicTagsInverse, tagsCount = readFileAnGenerateTrain("train/ratings_parsed.txt")
 	palabrasW, paragraphsW = doc2vec(frases, npalabras, tagsCount, ventana, alpha, alpha_min, dimensiones, epocas)

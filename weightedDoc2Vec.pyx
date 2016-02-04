@@ -20,10 +20,10 @@ def tuplasEntrenamiento(frase, ventana, tags):
     lenFrase = len(frase)
     ventanaAnterior = ventaDelantera = (ventana - 1)/2
     tuplas = []
-    for i in xrange(ventanaAnterior, lenFrase - ventaDelantera, 1):
+    for i in xrange(lenFrase):
         palabrasCercanas = []
         for j in range(i - ventanaAnterior, i + ventanaAnterior + 1):
-            if j != i:
+            if j != i and j > 0 and j < lenFrase:
                 palabrasCercanas.append(frase[j])
         tuplas.append((frase[i], palabrasCercanas, tags))
 
@@ -80,6 +80,7 @@ def doc2vec(frases,int npalabras,int tagsCount,int ventana,double alpha,double a
     cdef DTYPE_t sumWeights = 0.0
     cdef np.ndarray EH_medium
     cdef np.ndarray EH
+    y_j_MAX = 1000.0
 
     for _ in xrange(epocas):
         print _
@@ -118,17 +119,20 @@ def doc2vec(frases,int npalabras,int tagsCount,int ventana,double alpha,double a
                 #if not optimiced
                 #for palabraW in palabrasW:
                 #   sumsePowu_j += softMaxPartial(h, palabraW)
-                for index in np.random.randint(0, high=npalabras-1, size=10):
+                for index in np.random.randint(0, high=npalabras-1, size=100):
                     #index = random.randint(0, npalabras-1)
                     if index != palabraIndexTrain:
                         sumsePowu_j += softMaxPartial_line(h, palabrasW[index])
 
                 y_j = ePowu_j/sumsePowu_j
+                #if y_j_MAX > (y_j - peso)**2:
+                #    print (y_j - peso)**2
+                #    y_j_MAX = (y_j - peso)**2
                 
-                palabrasW[palabraIndexTrain] = palabrasW[palabraIndexTrain] - ((alpha_aux * double_max(0.001, (y_j - peso))) * h)
+                palabrasW[palabraIndexTrain] = palabrasW[palabraIndexTrain] - ((alpha_aux * double_max(1e-4, (y_j - peso))) * h)
                 palabrasW[palabraIndexTrain] = palabrasW[palabraIndexTrain] / np.linalg.norm(palabrasW[palabraIndexTrain])
                 
-                EH = double_max(0.001, (y_j - peso)) * palabrasW[palabraIndexTrain]
+                EH = double_max(1e-4, (y_j - peso)) * palabrasW[palabraIndexTrain]
                 EH_medium = (alpha_aux/sumWeights) * EH
                 #print EH_medium
                 
@@ -142,5 +146,6 @@ def doc2vec(frases,int npalabras,int tagsCount,int ventana,double alpha,double a
                 
             #actualizacion del alpha
             alpha_aux -= alpha_change
+        print alpha_aux
     
     return palabrasW, paragraphsW
