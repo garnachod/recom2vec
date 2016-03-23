@@ -58,13 +58,14 @@ def train(sentences, save_location, dimension = 64, epochs = 20, method="DBOW"):
 		dm_ = 1 
 		if method != "DBOW":
 			dm_ = 0
-		model = Doc2Vec(min_count=1, window=7, size=dimension, dm = dm_, sample=1e-3, negative=5,workers=6, alpha=0.02)
+		model = Doc2Vec(min_count=1, window=20, size=dimension, dm = dm_, sample=1e-3, negative=5,workers=8, alpha=0.02)
 		
 		print "inicio vocab"
 		model.build_vocab(sentences)
+		print model["1"]
 		print "fin vocab"
 		first_alpha = model.alpha
-		last_alpha = 0.0001
+		last_alpha = 0.001
 		#model.min_alpha = 0.0001
 		next_alpha = first_alpha
 		for epoch in xrange(epochs):
@@ -74,6 +75,7 @@ def train(sentences, save_location, dimension = 64, epochs = 20, method="DBOW"):
 			next_alpha = (((first_alpha - last_alpha) / float(epochs)) * float(epochs - (epoch+1)) + last_alpha)
 			model.min_alpha = next_alpha
 			model.train(sentences)
+			print model["1"]
 			end = time.time()
 			model.alpha = next_alpha
 			print "tiempo de la epoca " + str(epoch) +": " + str(end - start)

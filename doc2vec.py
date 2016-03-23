@@ -15,6 +15,8 @@ from numpy import zeros, random, sum as np_sum, add as np_add, concatenate, \
     repeat as np_repeat, array, float32 as REAL, empty, ones, memmap as np_memmap, \
     sqrt, newaxis, ndarray, dot, vstack, dtype, divide as np_divide
 
+from numpy import linalg as lg
+
 from gensim import utils, matutils  # utility fnc for pickling, common scipy operations etc
 from word2vec import Word2Vec, Vocab, train_cbow_pair, train_sg_pair, train_batch_sg
 from six.moves import xrange, zip
@@ -101,7 +103,8 @@ def train_document_dm(model, doc_words, doctag_indexes, alpha, work=None, neu1=N
         reduced_window = model.random.randint(model.window)  # `b` in the original doc2vec code
         start = max(0, pos - model.window + reduced_window)
         window_pos = enumerate(word_vocabs[start:(pos + model.window + 1 - reduced_window)], start)
-        word2_indexes = [word2[0].index for pos2, word2 in window_pos if pos2 != pos]
+        #word2_indexes = [word2[0].index for pos2, word2 in window_pos if pos2 != pos]
+        word2_indexes = [(word2[0].index, word2[1]) for pos2, word2 in window_pos if pos2 != pos]
         #AQUI se hace la media
         #raise Exception(str(word2_indexes))
         #l1 = np_sum(doctag_vectors[doctag_indexes], axis=0)
@@ -109,20 +112,35 @@ def train_document_dm(model, doc_words, doctag_indexes, alpha, work=None, neu1=N
 
         #media, de los doc con las palabras.
         #al ser numpy hace la suma automatica
-        l1 = np_sum(word_vectors[word2_indexes], axis=0) + np_sum(doctag_vectors[doctag_indexes], axis=0)
-        count = len(word2_indexes) + len(doctag_indexes)
+        #l1 = np_sum(word_vectors[word2_indexes], axis=0) + np_sum(doctag_vectors[doctag_indexes], axis=0)
+        
+        l1 = np_sum(doctag_vectors[doctag_indexes], axis=0)
+        count = 0.0
+        for word2_index, word2_weight in word2_indexes:
+            l1 += word_vectors[word2_index] * word2_weight
+            count += word2_weight
+
+        count += len(doctag_indexes)
         if model.cbow_mean and count > 1 :
             l1 /= count
-        neu1e = train_cbow_pair(model, word, word2_indexes, l1, alpha,
+
+
+        word2_indexes2 = [x[0] for x in word2_indexes]
+        neu1e = train_cbow_pair(model, word, word2_indexes2, l1, alpha,
                                 learn_vectors=False, learn_hidden=learn_hidden, weight=peso)
+
         if not model.cbow_mean and count > 1:
             neu1e /= count
+            
         if learn_doctags:
             for i in doctag_indexes:
                 doctag_vectors[i] += neu1e * doctag_locks[i]
+                doctag_vectors[i] = doctag_vectors[i]/lg.norm(doctag_vectors[i])
+
         if learn_words:
-            for i in word2_indexes:
-                word_vectors[i] += neu1e * word_locks[i]
+            for i, weight in word2_indexes:
+                word_vectors[i] += weight * neu1e * word_locks[i]
+                word_vectors[i] = word_vectors[i]/lg.norm(word_vectors[i])
 
     return len(word_vocabs)
 

@@ -164,7 +164,7 @@ def train_sg_pair(model, word, context_index, alpha, learn_vectors=True, learn_h
         # work on the entire tree at once, to push as much work into numpy's C routines as possible (performance)
         l2a = deepcopy(model.syn1[predict_word.point])  # 2d matrix, codelen x layer1_size
         fa = 1.0 / (1.0 + exp(-dot(l1, l2a.T)))  # propagate hidden -> output
-        ga = (1 - predict_word.code - fa) * alpha  # vector of error gradients multiplied by the learning rate
+        ga = (1. - predict_word.code - fa) * alpha  # vector of error gradients multiplied by the learning rate
         if learn_hidden:
             model.syn1[predict_word.point] += outer(ga, l1)  # learn hidden -> output
         neu1e += dot(ga, l2a)  # save error
@@ -190,8 +190,7 @@ def train_sg_pair(model, word, context_index, alpha, learn_vectors=True, learn_h
 #anyadido el peso, que es el valor que queremos predecir
 def train_cbow_pair(model, word, input_word_indices, l1, alpha, learn_vectors=True, learn_hidden=True, weight=1.):
     neu1e = zeros(l1.shape)
-    #logger.debug("SENTENCES: word_vocabs %s", len(word))
-    #raise Exception("mierda")
+    
     if model.hs:
         l2a = model.syn1[word.point]  # 2d matrix, codelen x layer1_size
         fa = 1. / (1. + exp(-dot(l1, l2a.T)))  # propagate hidden -> output
@@ -653,6 +652,7 @@ class Word2Vec(utils.SaveLoad):
                     logger.debug(
                         "queueing job #%i (%i words, %i sentences) at alpha %.05f",
                         job_no, batch_size, len(job_batch), next_alpha)
+                    #logger.debug(str(self['1']))
                     job_no += 1
                     job_queue.put((job_batch, next_alpha))
 
