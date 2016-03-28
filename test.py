@@ -53,12 +53,12 @@ class LabeledLineSentence:
 
 			self.sentences.append(TaggedDocument(palabras_clean, ["u_"+user]))
 
-def train(sentences, save_location, dimension = 64, epochs = 20, method="DBOW"):
+def train(sentences, save_location, dimension = 128, epochs = 30, method="DBOW"):
 		total_start = time.time()
 		dm_ = 1 
 		if method != "DBOW":
 			dm_ = 0
-		model = Doc2Vec(min_count=1, window=20, size=dimension, dm = dm_, sample=1e-3, negative=5,workers=8, alpha=0.02)
+		model = Doc2Vec(min_count=1, window=10, size=dimension, dm = dm_, sample=1e-3, negative=5,workers=8, alpha=0.02)
 		
 		print "inicio vocab"
 		model.build_vocab(sentences)

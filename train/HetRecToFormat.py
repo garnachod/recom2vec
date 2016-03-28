@@ -3,7 +3,7 @@ import json
 if __name__ == '__main__':
 
 	users = {}
-	with open("user_ratedmovies-timestamps.dat", "r") as fIn:
+	with open("test", "r") as fIn:
 		for i, line in enumerate(fIn):
 			if i == 0:
 				pass
@@ -27,5 +27,5 @@ if __name__ == '__main__':
 		users[user]["ratings"] = sorted(users[user]["ratings"], key=lambda x: x[2], reverse=False)
 
 	#write out file
-	with open("ratings_parsed.txt", "w") as fOut:
+	with open("ratings_parsed_test.txt", "w") as fOut:
 		fOut.write(json.dumps(users))

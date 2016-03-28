@@ -23,6 +23,13 @@ def readMoviesData(filename):
 
 def getFilmsAndRating():
 	users = None
+	with open("train/ratings_parsed_test.txt", "r") as fin:
+			users = json.loads(fin.read())
+
+	return users
+
+def getFilmsAndRating_train():
+	users = None
 	with open("train/ratings_parsed.txt", "r") as fin:
 			users = json.loads(fin.read())
 
@@ -34,24 +41,51 @@ def isFilmInUser_getRating(user, film):
 			return rating[1]
 
 	return False
+	
 if __name__ == '__main__':
 	model = Doc2Vec.load("out.model")
 	dicMovies = readMoviesData("movies.dat")
-	idMovie = "13"
+	idMovie = "2959"
 	print "Similar to:" + dicMovies[idMovie].encode("ascii","ignore")
 	#objeto de tipo DocvecsArray
 	#for film in model.vocab:
 	#	print model[film]
 
-	for pelicula, coseno in model.most_similar(positive=["13"], topn=20):
-		if math.isnan(coseno) == False:
-			print pelicula + "\t\t" + dicMovies[pelicula].encode("ascii","ignore") + "\t\t" + str(coseno)
-	
+	persona = "78"
+	user = getFilmsAndRating()[persona]
+	user_t = getFilmsAndRating_train()[persona]
 
-	print "similaridad a la persona 622\n"
-	user = getFilmsAndRating()["622"]
-
-	for pelicula, coseno in model.most_similar(positive=model.docvecs[model.docvecs.doctags["u_622"]], topn=20):
+	i = 0
+	for pelicula, coseno in model.most_similar(positive=[idMovie], topn=100):
+		i += 1
 		if math.isnan(coseno) == False:
 			rating = isFilmInUser_getRating(user, pelicula)
-			print "|" + pelicula + "|" + dicMovies[pelicula].encode("ascii","ignore") + "|" + str(coseno) + "|" + str(rating) + "|"
+			rating_t = isFilmInUser_getRating(user_t, pelicula)
+			#if rating != False or rating_t != False:
+			print str(i)+ "|" + pelicula + "|" + dicMovies[pelicula].encode("ascii","ignore") + "|" + str(coseno) + "|" + str(rating) + "|" + str(rating_t) + "|"
+	
+	
+
+	print "\n\nsimilaridad a la persona %s"%persona
+	i = 0
+	for pelicula, coseno in model.most_similar(positive=model.docvecs[model.docvecs.doctags["u_"+persona]], topn=100):
+		i += 1
+		if math.isnan(coseno) == False:
+			rating = isFilmInUser_getRating(user, pelicula)
+			rating_t = isFilmInUser_getRating(user_t, pelicula)
+			if rating != False:
+				print str(i)+ "|" + pelicula + "|" + dicMovies[pelicula].encode("ascii","ignore") + "|" + str(coseno) + "|" + str(rating) + "|" + str(rating_t) + "|"
+
+	print "\nsimilaridad a las peliculas que mas han gustado al usuario"
+	user_t_sr = sorted(user_t["ratings"], key=lambda x: x[1], reverse=True)
+
+	films = [x[0] for x in user_t_sr[:5]]
+
+	i = 0
+	for pelicula, coseno in model.most_similar(positive=films, topn=100):
+		i += 1
+		if math.isnan(coseno) == False:
+			rating = isFilmInUser_getRating(user, pelicula)
+			rating_t = isFilmInUser_getRating(user_t, pelicula)
+			if rating != False :
+				print str(i)+ "|" + pelicula + "|" + dicMovies[pelicula].encode("ascii","ignore") + "|" + str(coseno) + "|" + str(rating) + "|" + str(rating_t) + "|"
